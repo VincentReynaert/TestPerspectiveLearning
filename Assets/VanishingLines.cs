@@ -3,22 +3,20 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
-[RequireComponent(typeof(BoxCollider))]
 public class VanishingLines : MonoBehaviour
 {
-    Vector3[] vertices = new Vector3[8];
+
+    [Header("Lines settings")]
+    [SerializeField] private Material lineMaterial;
     [SerializeField] private float lineLength = 100;
+    [SerializeField, Range(0f, 1f)] private float lineWidth = 0.02f;
+    [SerializeField] private LineRenderer[] lines = new LineRenderer[12];
     [SerializeField] Color lineColor = Color.white;
+    [SerializeField] private bool show_RGB_XYZ_Colors = false, showLines = true, showDebugLines = false;
+
+    Vector3[] vertices = new Vector3[8];
     Color currentLineColor;
     BoxCollider boxCollider;
-    [SerializeField] private bool showAxesColors;
-    [SerializeField] private LineRenderer[] lines = new LineRenderer[12];
-    [SerializeField, Range(0f, 1f)] private float lineWidth = 0.02f;
-    [SerializeField] private Material lineMaterial;
-    private bool showLines = true;
-    private bool showingLines = true;
-
-    //public static bool ShowLines { get => showLines; set => showLines = !showLines; }
 
     private void OnEnable()
     {
@@ -40,14 +38,12 @@ public class VanishingLines : MonoBehaviour
         }
 
     }
-    //public static void ToggleShowLines()
-    //{
-    //    print("toggle");
-    //    showLines = !showLines;
-    //}
+
     void Start()
     {
-        boxCollider = GetComponent<BoxCollider>();
+        boxCollider = gameObject.AddComponent<BoxCollider>();
+        boxCollider.isTrigger = true;
+
         currentLineColor = lineColor;
         for (int i = 0; i < 12; i++)
         {
@@ -63,37 +59,33 @@ public class VanishingLines : MonoBehaviour
     void Update()
     {
         if (!showLines) return;
-        //if (!showLines)
-        //{
-        //    if (showingLines)
-        //    {
-        //        showingLines = false;
-        //        foreach (var item in lines)
-        //        {
-        //            item.gameObject.SetActive(false);
-        //        }
-        //    }
-        //    return;
-        //}
-        //else if (!showingLines)
-        //{
-        //    showingLines = true;
-        //    foreach (var item in lines)
-        //    {
-        //        item.gameObject.SetActive(true);
-        //    }
-        //}
+
         if (transform.hasChanged)
         {
             transform.hasChanged = false;
             ComputeBoundingBoxVertices(boxCollider.size, boxCollider.center);
+            DrawEdges();
         }
-        DrawEdges();
+        if (showDebugLines) DebugDrawEdges();
     }
+
     private Vector3 Multiply(Vector3 v, Vector3 u)
     {
         return new Vector3(v.x * u.x, v.y * u.y, v.z * u.z);
     }
+
+    private void ComputeBoundingBoxVertices(Vector3 boxSize, Vector3 boxCenter)
+    {
+        vertices[0] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(1, 1, 1)));
+        vertices[1] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(1, 1, -1)));
+        vertices[2] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(1, -1, 1)));
+        vertices[3] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(1, -1, -1)));
+        vertices[4] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(-1, 1, 1)));
+        vertices[5] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(-1, 1, -1)));
+        vertices[6] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(-1, -1, 1)));
+        vertices[7] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(-1, -1, -1)));
+    }
+
     private void DrawEdges()
     {
         int lineIndex = 0;
@@ -118,30 +110,42 @@ public class VanishingLines : MonoBehaviour
             lineIndex = HandleLine(lineIndex, worldPta, worldPtb);
         }
     }
+    private void DebugDrawEdges()
+    {
+        Vector3 worldPta = vertices[0];
+        foreach (var worldPtb in new Vector3[] { vertices[1], vertices[2], vertices[4] })
+        {
+            DrawDebugLine(worldPta, worldPtb);
+        }
+        worldPta = vertices[3];
+        foreach (var worldPtb in new Vector3[] { vertices[1], vertices[2], vertices[7] })
+        {
+            DrawDebugLine(worldPta, worldPtb);
+        }
+        worldPta = vertices[5];
+        foreach (var worldPtb in new Vector3[] { vertices[1], vertices[4], vertices[7] })
+        {
+            DrawDebugLine(worldPta, worldPtb);
+        }
+        worldPta = vertices[6];
+        foreach (var worldPtb in new Vector3[] { vertices[2], vertices[4], vertices[7] })
+        {
+            DrawDebugLine(worldPta, worldPtb);
+        }
+    }
+
 
     private int HandleLine(int lineIndex, Vector3 worldPta, Vector3 worldPtb)
     {
         UpdateLineColor(worldPta, worldPtb);
-        DrawDebugLine(worldPta, worldPtb);
         UpdateLine(worldPta, worldPtb, lines[lineIndex]);
         lineIndex++;
         return lineIndex;
     }
 
-    private void ComputeBoundingBoxVertices(Vector3 boxSize, Vector3 boxCenter)
-    {
-        vertices[0] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(1, 1, 1)));
-        vertices[1] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(1, 1, -1)));
-        vertices[2] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(1, -1, 1)));
-        vertices[3] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(1, -1, -1)));
-        vertices[4] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(-1, 1, 1)));
-        vertices[5] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(-1, 1, -1)));
-        vertices[6] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(-1, -1, 1)));
-        vertices[7] = transform.TransformPoint(boxCenter + Multiply(boxSize * 0.5f, new Vector3(-1, -1, -1)));
-    }
     private void UpdateLineColor(Vector3 worldPta, Vector3 worldPtb)
     {
-        if (showAxesColors)
+        if (show_RGB_XYZ_Colors)
         {
             if (Vector3.Angle((worldPtb - worldPta), transform.forward) % 180 == 0) currentLineColor = Color.blue;
             else if (Vector3.Angle((worldPtb - worldPta), transform.up) % 180 == 0) currentLineColor = Color.green;
