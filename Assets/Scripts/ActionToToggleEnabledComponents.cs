@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR.OpenXR.Samples.ControllerSample;
 
+[DisallowMultipleComponent]
 public class ActionToToggleEnabledComponents : MonoBehaviour
 {
 
