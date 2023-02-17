@@ -10,7 +10,7 @@ public class ActionToToggleEnabledComponents : MonoBehaviour
     [Tooltip("Action Reference that represents the control")]
     [SerializeField] private InputActionReference _leftActionReference = null;
     [SerializeField] private InputActionReference _rightActionReference = null;
-    [SerializeField] private List<MonoBehaviour> componentList = new List<MonoBehaviour>();
+    [SerializeField] private List<MonoBehaviour> _componentList = new List<MonoBehaviour>();
 
 
     protected virtual void OnEnable()
@@ -32,7 +32,7 @@ public class ActionToToggleEnabledComponents : MonoBehaviour
     }
     protected void OnActionPerformed(InputAction.CallbackContext ctx)
     {
-        foreach (MonoBehaviour item in componentList)
+        foreach (MonoBehaviour item in _componentList)
         {
             item.enabled = !item.enabled;
         }
